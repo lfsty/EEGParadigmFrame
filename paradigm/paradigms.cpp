@@ -532,8 +532,14 @@ SControl *paradigms::GenControl(configor::json json_data)
                     }
 
                     QPixmap pix = QPixmap(img_path.c_str());
-                    p_sdisplay->SetPixMap(pix);
 
+                    //图片缩放
+                    if(display_json["Size"].is_object())
+                    {
+                        int height = display_json["Size"]["Height"];
+                        int width = display_json["Size"]["Width"];
+                        pix = pix.scaled(width, height, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+                    }
                     //图片定位
                     QRect pix_rect = pix.rect();
                     QRect pix_loc;
@@ -545,6 +551,8 @@ SControl *paradigms::GenControl(configor::json json_data)
                     {
                         //固定定位还没有写！
                     }
+
+                    p_sdisplay->SetPixMap(pix);
                     p_sdisplay->SetPosition(pix_loc);
 
                 }
