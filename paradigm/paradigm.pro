@@ -18,40 +18,29 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     main.cpp \
-    paradigmobj.cpp \
-    paradigms.cpp \
-    setupdlg.cpp \
-    sjson.cpp \
-    sserial.cpp \
-    unzip.cpp \
-    utils.cpp
+    utils/paradigms.cpp \
+    utils/scontrol.cpp \
+    utils/sdisplay.cpp \
+    utils/setupdlg.cpp \
+    utils/sjson_qt.cpp \
+    utils/sserial.cpp \
+    utils/unzip.cpp \
+    utils/utils.cpp
 
 HEADERS += \
-    configor/configor.hpp \
-    configor/configor_basic.hpp \
-    configor/configor_conversion.hpp \
-    configor/configor_declare.hpp \
-    configor/configor_encoding.hpp \
-    configor/configor_exception.hpp \
-    configor/configor_iterator.hpp \
-    configor/configor_parser.hpp \
-    configor/configor_serializer.hpp \
-    configor/configor_stream.hpp \
-    configor/configor_token.hpp \
-    configor/configor_value.hpp \
-    configor/json.hpp \
-    data_info.h \
-    paradigmobj.h \
-    paradigms.h \
-    setupdlg.h \
-    sjson.h \
-    sserial.h \
-    unzip.h \
-    utils.h
+    utils/data_info.h \
+    utils/paradigms.h \
+    utils/scontrol.h \
+    utils/sdisplay.h \
+    utils/setupdlg.h \
+    utils/sjson_qt.h \
+    utils/sserial.h \
+    utils/unzip.h \
+    utils/utils.h
 
 FORMS += \
-    paradigms.ui \
-    setupdlg.ui
+    ui/paradigms.ui \
+    ui/setupdlg.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -59,4 +48,6 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 RESOURCES += \
-    7z.qrc
+    resource/7z.qrc
+
+DISTFILES +=
