@@ -1,14 +1,14 @@
 #ifndef SSERIAL_H
 #define SSERIAL_H
-
-
 #include <QtSerialPort/QSerialPort>
 #include <QString>
 #include <QByteArray>
-class SSerial
+#include <QObject>
+class SSerial: public QObject
 {
+    Q_OBJECT
 public:
-    SSerial();
+    SSerial(QObject *parent = nullptr);
     ~SSerial();
 public:
     void SetBaudRate(int baudrate);

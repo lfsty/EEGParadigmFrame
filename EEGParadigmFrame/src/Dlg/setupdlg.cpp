@@ -1,22 +1,20 @@
 #include "setupdlg.h"
 #include "ui_setupdlg.h"
-#include <QFileDialog>
-#include <QIntValidator>
-#include <QDebug>
-#include <QMessageBox>
+
 SetupDlg::SetupDlg(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::SetupDlg)
 {
     ui->setupUi(this);
+    if(!m_temp_dir.isValid())
+    {
+        QMessageBox::critical(this, "error", "临时目录获取失败!");
+        exit(-3);
+    }
     ui->m_line_server_port->setValidator(new QIntValidator(ui->m_line_server_port));
 
     connect(ui->m_btn_tcp_back, &QPushButton::clicked, this, &SetupDlg::on_m_btn_back_index);
     connect(ui->m_btn_local_back, &QPushButton::clicked, this, &SetupDlg::on_m_btn_back_index);
-
-    m_tcp_client = new QTcpSocket();
-
-    m_paradigm_window = new paradigms();
 
     this->setWindowTitle("打开方式");
 }
@@ -24,8 +22,6 @@ SetupDlg::SetupDlg(QWidget *parent) :
 SetupDlg::~SetupDlg()
 {
     delete ui;
-    delete m_tcp_client;
-    delete m_paradigm_window;
 }
 
 void SetupDlg::on_m_btn_tcp_clicked()
@@ -45,7 +41,6 @@ void SetupDlg::on_m_btn_back_index()
 
 void SetupDlg::on_m_btn_choose_local_file_clicked()
 {
-//    ui->m_line_choose_local_file_path->setText("test");
     QString filename = QFileDialog::getOpenFileName(
                            this,
                            "open a file",
@@ -53,17 +48,15 @@ void SetupDlg::on_m_btn_choose_local_file_clicked()
                            "压缩文件(*.zip *7z);;All files(*.*)"
                        );
     ui->m_line_choose_local_file_path->setText(filename);
-
-
 }
 
 void SetupDlg::open_paradigm(QString file_path)
 {
-
-//    w->setAttribute(Qt::WA_DeleteOnClose);
-    m_paradigm_window->start_paradigms(file_path);
-    m_paradigm_window->show();
+    Paradigm *w = new Paradigm(this);
+    w->SetRootPath(m_temp_dir.path());
     this->hide();
+    w->show();
+    w->Start(file_path);
 }
 
 void SetupDlg::on_m_local_btn_ok_clicked()
@@ -77,14 +70,25 @@ void SetupDlg::on_m_tcp_btn_ok_clicked()
     int server_port = ui->m_line_server_port->text().toInt();
 
     //连接服务器
+    if(m_tcp_client == nullptr)
+    {
+        m_tcp_client = new QTcpSocket(this);
+    }
+
     m_tcp_client->connectToHost(server_ip, server_port);
     bool is_connected = m_tcp_client->waitForConnected();//等待直到连接成功
 
     if(is_connected)
     {
-        m_paradigm_window->SetTcpClient(m_tcp_client);
-        m_paradigm_window->show();
-        this->hide();
+        WaitForFileDlg w(this);
+
+        w.SetRootPath(m_temp_dir.path());
+        w.SetTcpClient(m_tcp_client);
+        w.show();
+        w.showFullScreen();
+        w.exec();
+
+        open_paradigm(w.GetFilePath());
     }
     else
     {

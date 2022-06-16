@@ -1,65 +1,20 @@
-#include "paradigms.h"
-#include "ui_paradigms.h"
+#include "paradigm.h"
 
-paradigms::paradigms(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::paradigms)
+#include <QDebug>
+
+Paradigm::Paradigm(QWidget *parent)
+    : QDialog{parent}
 {
-    ui->setupUi(this);
-
-    //设置临时目录地址
-    if(m_temp_dir.isValid())
-    {
-        m_root_path = m_temp_dir.path() + "/";
-    }
-    else
-    {
-        exit(-1);
-    }
 
 }
 
-paradigms::~paradigms()
+Paradigm::~Paradigm()
 {
-    delete ui;
 
-    for(auto iter : m_map_static_control_block)
-    {
-        iter->deleteLater();
-    }
-    for(auto iter : m_vect_stimulus_control_block)
-    {
-        iter->deleteLater();
-    }
-
-    for(auto iter = m_out_file_map.begin(); iter != m_out_file_map.end(); iter++)
-    {
-        if(iter.value()->isOpen())
-        {
-            iter.value()->close();
-        }
-        iter.value()->deleteLater();
-    }
-
-
-    if(m_sdisplay_wait_for_server != nullptr)
-    {
-        m_sdisplay_wait_for_server->deleteLater();
-    }
-
-    if(m_serial != nullptr)
-    {
-        delete m_serial;
-    }
 }
 
-void paradigms::start_paradigms(QString file_path)
+void Paradigm::Start(QString file_path)
 {
-    if(m_sdisplay_wait_for_server != nullptr)
-    {
-        m_sdisplay_wait_for_server->hide();
-    }
-
     unzip::UnZip(m_root_path, file_path);
 
     SJson_Qt sjson(m_root_path + "./paradigm.json");
@@ -80,74 +35,16 @@ void paradigms::start_paradigms(QString file_path)
 
 
     m_timer_100ms.setInterval(100);
-    connect(&m_timer_100ms, &QTimer::timeout, this, &paradigms::ontimer);
+    connect(&m_timer_100ms, &QTimer::timeout, this, &Paradigm::ontimer);
     m_timer_100ms.start();
 }
 
-void paradigms::SetTcpClient(QTcpSocket *tcp_client)
+void Paradigm::SetRootPath(QString root_path)
 {
-    m_tcp_client = tcp_client;
-
-    m_sdisplay_wait_for_server = new SDisplay(SDisplay::DisPlayType::Text, this);
-
-    connect(m_tcp_client, &QTcpSocket::readyRead, this, &paradigms::onTcpReadData);
-
-
-    showFullScreen();
-
-    //设置内容
-    m_sdisplay_wait_for_server->setText("服务器已连接，等待服务器下发范式");
-
-    //设置定位
-    m_sdisplay_wait_for_server->setGeometry(rect());
-    m_sdisplay_wait_for_server->setAlignment(Qt::AlignCenter);
-    //设置字体格式
-    QFont ft;
-    ft.setPointSize(20);
-    ft.setBold(true);
-    m_sdisplay_wait_for_server->setFont(ft);
-
-    m_sdisplay_wait_for_server->show();
-
+    m_root_path = root_path;
 }
 
-void paradigms::keyPressEvent(QKeyEvent *event)
-{
-    if(m_current_control_block != nullptr)
-    {
-        QString key_event = m_current_control_block->GetEvent(event->key());
-        if(key_event == "next")
-        {
-            setNextBlock();
-        }
-    }
-
-    if(event->key() == Qt::Key_Escape)
-    {
-        showNormal();
-    }
-}
-
-void paradigms::resizeEvent(QResizeEvent *event)
-{
-    //窗口大小发生变化，重新设置显示位置
-    //注：当前没有规划固定位置，全部都为居中显示。
-    for(auto iter : m_map_static_control_block)
-    {
-        iter->ReSize(rect());
-    }
-    for(auto iter : m_vect_stimulus_control_block)
-    {
-        iter->ReSize(rect());
-    }
-    if(m_sdisplay_wait_for_server != nullptr)
-    {
-        m_sdisplay_wait_for_server->setGeometry(rect());
-    }
-//    qDebug() << "resize";
-}
-
-bool paradigms::ParseJson(QJsonObject json_object)
+bool Paradigm::ParseJson(QJsonObject json_object)
 {
     //全屏
     if(json_object["DialogSize"].toObject()["Type"].toString() == "full_screen")
@@ -170,7 +67,7 @@ bool paradigms::ParseJson(QJsonObject json_object)
                 QJsonObject mark_info_obj = iter.toObject();
                 if(mark_info_obj["Type"].toString() == "COM")
                 {
-                    m_serial = new SSerial();
+                    m_serial = new SSerial(this);
                     m_serial->SetPortName(mark_info_obj["PortName"].toString());
                     m_serial->SetBaudRate(mark_info_obj["BaudRate"].toInt());
                     m_serial->SetDataBits(mark_info_obj["DataBits"].toInt());
@@ -336,7 +233,7 @@ bool paradigms::ParseJson(QJsonObject json_object)
     return true;
 }
 
-SControl *paradigms::GenControl(QJsonObject json_obj)
+SControl *Paradigm::GenControl(QJsonObject json_object)
 {
     SControl *p_scontrol = new SControl(this);
     p_scontrol->setGeometry(rect());
@@ -346,9 +243,9 @@ SControl *paradigms::GenControl(QJsonObject json_obj)
     }
 
     //Control
-    if(json_obj["Control"].isObject())
+    if(json_object["Control"].isObject())
     {
-        QJsonObject control_obj = json_obj["Control"].toObject();
+        QJsonObject control_obj = json_object["Control"].toObject();
         //Control_Duration
         p_scontrol->SetDuration(control_obj["Duration"].toInt());
         //Control_Action
@@ -397,9 +294,9 @@ SControl *paradigms::GenControl(QJsonObject json_obj)
     }
 
     //Display
-    if(json_obj["Display"].isArray())
+    if(json_object["Display"].isArray())
     {
-        QJsonArray display_array = json_obj["Display"].toArray();
+        QJsonArray display_array = json_object["Display"].toArray();
         for(auto iter : display_array)
         {
             if(iter.isObject())
@@ -491,7 +388,7 @@ SControl *paradigms::GenControl(QJsonObject json_obj)
     return p_scontrol;
 }
 
-void paradigms::setNextBlock()
+void Paradigm::setNextBlock()
 {
     m_currnet_timer_count_100ms = 0;
     QString current_block_name = m_vect_paradigm_order[m_current_paradigm_order_step++];
@@ -514,7 +411,38 @@ void paradigms::setNextBlock()
     }
 }
 
-void paradigms::ontimer()
+void Paradigm::keyPressEvent(QKeyEvent *event)
+{
+    if(m_current_control_block != nullptr)
+    {
+        QString key_event = m_current_control_block->GetEvent(event->key());
+        if(key_event == "next")
+        {
+            setNextBlock();
+        }
+    }
+
+    if(event->key() == Qt::Key_Escape)
+    {
+        showNormal();
+    }
+}
+
+void Paradigm::resizeEvent(QResizeEvent *event)
+{
+    //窗口大小发生变化，重新设置显示位置
+    //注：当前没有规划固定位置，全部都为居中显示。
+    foreach(auto iter, m_map_static_control_block)
+    {
+        iter->ReSize(rect());
+    }
+    for(auto iter : m_vect_stimulus_control_block)
+    {
+        iter->ReSize(rect());
+    }
+}
+
+void Paradigm::ontimer()
 {
     if(m_current_paradigm_order_step < m_vect_paradigm_order.size())
     {
@@ -561,72 +489,5 @@ void paradigms::ontimer()
     else
     {
         m_timer_100ms.stop();
-    }
-}
-
-void paradigms::onTcpReadData()
-{
-    static QByteArray  tcp_buffer;
-
-    tcp_buffer.append(m_tcp_client->readAll());
-
-    while(tcp_buffer.size() >= sizeof(msg_base))
-    {
-        msg_base _msg_base;
-        memcpy(&_msg_base, tcp_buffer, sizeof(msg_base));
-
-        switch(_msg_base.m_type)
-        {
-            case info_type::file_begin:
-                {
-                    if(tcp_buffer.size() < sizeof(msg_file_begin))
-                    {
-                        return;
-                    }
-                    msg_file_begin _msg_file_begin;
-                    memcpy(&_msg_file_begin, tcp_buffer.data(), sizeof(msg_file_begin));
-
-                    QFile *out_file = new QFile(m_root_path + QString(_msg_file_begin.name));
-                    if(!out_file->open(QIODevice::WriteOnly))
-                    {
-                        return;
-                    }
-
-                    m_out_file_map[_msg_file_begin.name] = out_file;
-
-                    tcp_buffer.remove(0, sizeof(msg_file_begin));
-                    break;
-                }
-            case info_type::file_data:
-                {
-                    if(tcp_buffer.size() < sizeof(msg_file_data))
-                    {
-                        return;
-                    }
-                    msg_file_data _msg_file_data;
-                    memcpy(&_msg_file_data, tcp_buffer.data(), sizeof(msg_file_data));
-                    tcp_buffer.remove(0, sizeof(msg_file_data));
-                    m_out_file_map[_msg_file_data.name]->write(_msg_file_data.data, _msg_file_data.size);
-                    break;
-                }
-            case info_type::file_end:
-                {
-                    if(tcp_buffer.size() < sizeof(msg_file_end))
-                    {
-                        return;
-                    }
-                    msg_file_end _msg_file_end;
-                    memcpy(reinterpret_cast<char *>(&_msg_file_end), tcp_buffer, sizeof(msg_file_end));
-                    tcp_buffer.remove(0, sizeof(msg_file_end));
-
-                    m_out_file_map[_msg_file_end.name]->close();
-
-                    QString file_path = m_root_path + QString(_msg_file_end.name);
-                    start_paradigms(file_path);
-
-                    break;
-                }
-        }
-
     }
 }

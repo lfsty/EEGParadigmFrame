@@ -1,6 +1,7 @@
 #include "sserial.h"
 #include <QMessageBox>
-SSerial::SSerial()
+SSerial::SSerial(QObject *parent)
+    : QObject{parent}
 {
 
 }

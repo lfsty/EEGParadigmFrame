@@ -1,18 +1,18 @@
-#ifndef PARADIGMS_H
-#define PARADIGMS_H
+#ifndef PARADIGM_H
+#define PARADIGM_H
 
-#include <QMainWindow>
+#include <QWidget>
+#include <QString>
 #include <QLabel>
 #include <QTimer>
-#include <QTemporaryDir>
 #include <QTcpSocket>
 #include <QMap>
 #include <QList>
-#include <QFile>
 #include <QVector>
 #include <QMessageBox>
 #include <QKeyEvent>
 #include <random>
+#include <QFileInfo>
 
 #include "sserial.h"
 #include "sjson_qt.h"
@@ -21,29 +21,23 @@
 #include "utils.h"
 #include "scontrol.h"
 #include "sdisplay.h"
-
-QT_BEGIN_NAMESPACE
-namespace Ui
-{
-    class paradigms;
-}
-QT_END_NAMESPACE
-
-class paradigms : public QMainWindow
+class Paradigm : public QDialog
 {
     Q_OBJECT
+public:
+    explicit Paradigm(QWidget *parent = nullptr);
+    ~Paradigm();
+    void Start(QString file_path);
+    //设置临时文件存放目录
+    void SetRootPath(QString root_path);
 
-public:
-    paradigms(QWidget *parent = nullptr);
-    ~paradigms();
 private:
-    QTcpSocket *m_tcp_client = nullptr;
-    SDisplay *m_sdisplay_wait_for_server = nullptr;
-    QMap<QString, QFile *> m_out_file_map;
     SSerial *m_serial = nullptr;
-public:
-    void start_paradigms(QString file_path);
-    void SetTcpClient(QTcpSocket *tcp_client);
+    QTimer m_timer_100ms;
+private:
+    bool ParseJson(QJsonObject json_object);
+    SControl *GenControl(QJsonObject json_object);
+    void setNextBlock();
 private:
     //静态Control块
     QMap<QString, SControl *> m_map_static_control_block;
@@ -66,21 +60,15 @@ private:
     int m_round = 0;
     int m_loop_times = 0;
     QString m_loop_mode = "order";
-private:
-    QTemporaryDir m_temp_dir;
+
 protected:
     void keyPressEvent(QKeyEvent *event);
     void resizeEvent(QResizeEvent *event);
-private:
-    bool ParseJson(QJsonObject json_object);
-    SControl *GenControl(QJsonObject json_object);
-    void setNextBlock();
-private:
-    QTimer m_timer_100ms;
 private slots:
     void ontimer();
-    void onTcpReadData();
-private:
-    Ui::paradigms *ui;
+
+signals:
+
 };
-#endif // PARADIGMS_H
+
+#endif // PARADIGM_H
