@@ -402,7 +402,6 @@ void Paradigm::setNextBlock()
     else
     {
         m_current_control_block = m_vect_stimulus_control_block[m_vect_stimulus_order[m_current_stimulus_order_step++]];
-//        m_elasped_timer.start();
     }
     last_control->HideBlocks();
     m_current_control_block->ShowBlocks();
@@ -484,10 +483,7 @@ void Paradigm::ontimer()
             {
                 qDebug() << "timeout next 不为next";
             }
-
-//            qDebug()<<"图片程序的时间为："<<m_elasped_timer.nsecsElapsed();
             setNextBlock();
-
         }
 
     }
