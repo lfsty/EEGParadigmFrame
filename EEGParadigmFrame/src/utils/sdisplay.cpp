@@ -4,8 +4,7 @@ SDisplay::SDisplay(DisPlayType type, QWidget *parent)
     : QLabel(parent)
 {
     SetDisPlayType(type);
-    //show();
-    hide();
+    show();
 }
 
 SDisplay::DisPlayType SDisplay::GetDisPlayType()

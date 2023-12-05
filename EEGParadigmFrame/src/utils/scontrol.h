@@ -1,11 +1,11 @@
 #ifndef SCONTROL_H
 #define SCONTROL_H
 
-#include <QObject>
+#include <QWidget>
 #include "sdisplay.h"
 #include "sserial.h"
 
-class SControl : public QObject
+class SControl : public QWidget
 {
     Q_OBJECT
 public:
