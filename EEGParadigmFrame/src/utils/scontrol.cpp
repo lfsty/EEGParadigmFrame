@@ -1,7 +1,7 @@
 #include "scontrol.h"
 
 SControl::SControl(QWidget *parent)
-    : QWidget{parent}
+    : QObject{parent}
 {
 
 }
@@ -16,25 +16,25 @@ SControl::~SControl()
 
 void SControl::ShowBlocks()
 {
-//    for(auto disp_block : m_display_block_list)
-//    {
-//        disp_block->show();
-//    }
-    show();
+    for(auto disp_block : m_display_block_list)
+    {
+        disp_block->show();
+    }
+//    show();
 }
 
 void SControl::HideBlocks()
 {
-//    for(auto disp_block : m_display_block_list)
-//    {
-//        disp_block->hide();
-//    }
-    hide();
+    for(auto disp_block : m_display_block_list)
+    {
+        disp_block->hide();
+    }
+    //hide();
 }
 
 void SControl::ReSize(QRect window_rect)
 {
-    setGeometry(rect());
+    //setGeometry(rect());
     for(auto disp_block : m_display_block_list)
     {
         switch(disp_block->GetDisPlayType())

@@ -5,7 +5,7 @@
 Paradigm::Paradigm(QWidget *parent)
     : QDialog{parent}
 {
-
+    m_timer_100ms.setTimerType(Qt::PreciseTimer);
 }
 
 Paradigm::~Paradigm()
@@ -236,7 +236,7 @@ bool Paradigm::ParseJson(QJsonObject json_object)
 SControl *Paradigm::GenControl(QJsonObject json_object)
 {
     SControl *p_scontrol = new SControl(this);
-    p_scontrol->setGeometry(rect());
+    //p_scontrol->setGeometry(rect());
     if(p_scontrol == nullptr)
     {
         return nullptr;
@@ -305,7 +305,7 @@ SControl *Paradigm::GenControl(QJsonObject json_object)
                 if(display_obj["DisplayType"].toString() == "TextDisplay")
                 {
                     //文本块
-                    SDisplay *p_sdisplay = new SDisplay(SDisplay::DisPlayType::Text, p_scontrol);
+                    SDisplay *p_sdisplay = new SDisplay(SDisplay::DisPlayType::Text, this);
                     //设置内容
                     p_sdisplay->setText(display_obj["TextData"].toString());
 
@@ -331,7 +331,7 @@ SControl *Paradigm::GenControl(QJsonObject json_object)
                 else if(display_obj["DisplayType"].toString() == "ImageDisplay")
                 {
                     //图片块
-                    SDisplay *p_sdisplay = new SDisplay(SDisplay::DisPlayType::Image, p_scontrol);
+                    SDisplay *p_sdisplay = new SDisplay(SDisplay::DisPlayType::Image, this);
                     //读取图片
                     QString img_path = display_obj["ImagePath"].toString();
                     img_path = m_root_path + img_path;
@@ -367,12 +367,14 @@ SControl *Paradigm::GenControl(QJsonObject json_object)
                     }
 
                     p_sdisplay->setPixmap(pix);
+
                     p_sdisplay->setGeometry(pix_loc);
 
                     p_scontrol->AddDisplayBlock(p_sdisplay);
                 }
                 else if(display_obj["DisplayType"].toString() == "Nothing")
                 {
+
                     //nothing 块
 
                 }
@@ -400,6 +402,7 @@ void Paradigm::setNextBlock()
     else
     {
         m_current_control_block = m_vect_stimulus_control_block[m_vect_stimulus_order[m_current_stimulus_order_step++]];
+//        m_elasped_timer.start();
     }
     last_control->HideBlocks();
     m_current_control_block->ShowBlocks();
@@ -409,6 +412,7 @@ void Paradigm::setNextBlock()
     {
         m_current_control_block->COMMark(m_serial);
     }
+
 }
 
 void Paradigm::keyPressEvent(QKeyEvent *event)
@@ -481,6 +485,7 @@ void Paradigm::ontimer()
                 qDebug() << "timeout next 不为next";
             }
 
+//            qDebug()<<"图片程序的时间为："<<m_elasped_timer.nsecsElapsed();
             setNextBlock();
 
         }
